@@ -42,13 +42,13 @@
        <div class="collapse navbar-collapse" id="navbarResponsive">
          <ul class="navbar-nav ml-auto">
            <li class="nav-item mx-0 mx-lg-1">
-             <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="/analyse">Analysis EN</a>
+             <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="/analyse">Analyse EN</a>
            </li>
            <li class="nav-item mx-0 mx-lg-1">
              <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="/analysefr">Analyse FR</a>
            </li>
            <li class="nav-item mx-0 mx-lg-1">
-             <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="#contact">A propos</a>
+             <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="/home">Accueil</a>
            </li>
          </ul>
        </div>
@@ -65,7 +65,21 @@
      </div>
    </header>
 
-   
+        <section class="bg-primary text-white mb-0" id="contact">
+        <div class="container">
+          <h2 class="text-center text-uppercase text-white"> Resultats pour le #{{hashtag}} </h2>
+          <hr class="star-light mb-5">
+          <h3 class="text-uppercase mb-4"> Analyse de {{ nombre }} tweets </h3> 
+          <h3 class="text-uppercase mb-4"> {{ pos  }} % des tweets sont positifs  </h3>
+          <h3 class="text-uppercase mb-4"> {{ neg  }} % des tweets sont negatifs  </h3>
+          <h3 class="text-uppercase mb-4"> {{ neutre }} % des tweets sont neutres  </h3> 
+          <div class="row">
+          
+         
+       
+          </div>
+        </div>
+      </section>
 
 
       <!-- About Section -->

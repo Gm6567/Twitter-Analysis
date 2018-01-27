@@ -33,10 +33,15 @@ import string
 from sklearn.naive_bayes import MultinomialNB # For Text classification
 from array import array
 import numpy as np
+from PIL import Image, ImageFont, ImageDraw, ImageEnhance
+
+
+
 ACCESS_TOKEN = "286164472-mCiXEbq6DNFH0Xosfw5gfqeGAFDf0yOZEKaH2Aqz"
 ACCESS_SECRET = "Zxf07ze7g2aKbokA3zr6GtU8Bs78WsoDm4poTwe9wqkJX"
 CONSUMER_KEY = "PtBKawruJYYUEZ4CkPfZi3pU4"
 CONSUMER_SECRET = "IRNGOK1XDHlGaqnFHCC8H59z0ltxNUVvWSrDRwCg7qAUA1Iqlr"
+
 
 nltk.download('stopwords')
 tweet_tokenizer = TweetTokenizer() 
@@ -227,117 +232,77 @@ def home(request):
 
 # Fonction appelée pour la page analyse Anglais
 def analyse(request):
-
+   
     return render(request, 'interface/analyse.html', locals())
-
+  
 # Fonction d'extraction des tweets vers la base de donnée sqlite
 def recherche(request):
-    Twit.objects.all().delete()
-    if request.method == 'GET':
-     hashtag = request.GET.get('search_box', None)
-     nombre = request.GET.get('number', None)
+     Twit.objects.all().delete()
+     if request.method == 'GET':
+      hashtag = request.GET.get('search_box', None)
+      nombre = request.GET.get('number', None)
      
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
-    # Return API with authentication:
-    api = tweepy.API(auth)
-    nombre = int(nombre)
-
-  # Les lignes qui suivent concernent les algorithmes de ML , bug à ce niveau là
-  #  classified_tweets = csv.reader(open('imdb_labelled.txt', 'r'), delimiter='\t', quotechar='|')
-  #  labeled_tweets = []
-    
- #   for row in classified_tweets:
-  #   sentiment = row[1] # 0 negative 1 positive
-  #   tweet = row[0]
-  #   trained_clean = clean_tweet(tweet)
-  #   feature_vector = get_feature_vector(trained_clean)
-  #   labeled_tweets.append((feature_vector, sentiment))
-
-  #  print (labeled_tweets)
-  #  word_features = words_in_tweets(labeled_tweets)
-  #  print(word_features)
-
-
-  #  labeled_data= pd.DataFrame((labeled_tweets), columns = ('Tweets', 'Class'), copy = True)
-  #  labeled_data['Tweets'] = labeled_data['Tweets'].apply(func = join_words)
-
-
-   # X = labeled_data['Tweets']
-   # y = labeled_data['Class']
-   # print (X.shape)
-   # print (y.shape)
-
-    # Training set and Testing set
-   # X_train, X_test, y_train, y_test = train_test_split(X, y, random_state = 1)
-  #  print(X_train.shape)
-   # print(X_test.shape)
-   # print(y_train.shape)
-   # print(y_test.shape)
-    
-   # vectorizer = CountVectorizer(analyzer = 'word', preprocessor = None, tokenizer = None, stop_words = stopword_list, lowercase = False)
-
-   # X_train_dtm = vectorizer.fit_transform(X_train)
-   # voc = vectorizer.get_feature_names()
-   # print (len(voc)) # Size of feature vocabulary selected by CountVectorizer
-   # X_train_dtm # Matrice creuse obtenue à partir des features retenues
-
-   # X_test_dtm = vectorizer.transform(X_test) # Matrice creuse (avec bcp de 0...) pour prédire leurs classes
-   # print(X_test_dtm)
-   # print(X_test)
-   # nb = MultinomialNB()
-   # nb.fit(X_train_dtm, y_train)
-
-   # y_pred = nb.predict(X_test_dtm) # Predictions are saved in y_pred_class
-   #  metrics.accuracy_score(y_test, y_pred) # Accuracy of our classifier
-   # cm = metrics.confusion_matrix(y_test, y_pred) # 24 faux positive 23 faux négative
-   # print(cm)
-   #  print(X_test[y_pred > y_test])
-   # y_pred = nb.predict(X_test_dtm)
-   # print(y_pred[0])
+     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+     auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
+     # Return API with authentication:
+     api = tweepy.API(auth)
+     nombre = int(nombre)
+     nombre2 = nombre
+     pos = 0.0
+     neg = 0.0
+     neu = 0.0
 
 # On identifie le tweet qui a l'id maximum
-    tweets = api.search(q = hashtag, lang = 'en', count=1)
-    max = tweets[0].id
-    while (nombre > 100):
-     tweets = api.search(q = hashtag,lang = 'en', count=100, max_id = max)
-     nombre = nombre - 100
-     max = tweets[99].id
+     tweets = api.search(q = hashtag, lang = 'en', count=1)
+     max = tweets[0].id
+     while (nombre > 100):
+      tweets = api.search(q = hashtag,lang = 'en', count=100, max_id = max)
+      nombre = nombre - 100
+      max = tweets[99].id
      
 # Grace à 2 boucles for on peut extraire pile le nombre de tweets rentrés     
-     for tweet in tweets[:100]:
+      for tweet in tweets[:100]:
+       clean_text = clean_tweet(tweet.text)
+       twit = TextBlob(tweet.text)
+       if twit.polarity == 0:
+        sentiment = "neutre"
+        neu = neu + 1
+       if twit.polarity > 0:
+        sentiment = "positif"
+        pos = pos + 1
+       if twit.polarity < 0:
+        sentiment = "negatif"
+        neg = neg + 1
+       q = Twit(tweet_text=tweet.text, clean_text = clean_text, user = tweet.user , nb_retweet = tweet.retweet_count , 
+       nb_like = tweet.favorite_count, Sentiment = sentiment, Polarity = twit.polarity, Date=tweet.created_at)
+       q.save()
+     
+  
+     tweets = api.search(q = hashtag,lang = 'en', count=nombre,  max_id = max)
+     for tweet in tweets[:nombre]:
       clean_text = clean_tweet(tweet.text)
       twit = TextBlob(tweet.text)
       if twit.polarity == 0:
        sentiment = "neutre"
+       neu = neu + 1
       if twit.polarity > 0:
        sentiment = "positif"
+       pos = pos + 1
       if twit.polarity < 0:
        sentiment = "negatif"
+       neg = neg + 1
       q = Twit(tweet_text=tweet.text, clean_text = clean_text, user = tweet.user , nb_retweet = tweet.retweet_count , 
       nb_like = tweet.favorite_count, Sentiment = sentiment, Polarity = twit.polarity, Date=tweet.created_at)
       q.save()
-     
-  
-    tweets = api.search(q = hashtag,lang = 'en', count=nombre,  max_id = max)
-    for tweet in tweets[:nombre]:
-     clean_text = clean_tweet(tweet.text)
-     twit = TextBlob(tweet.text)
-     if twit.polarity == 0:
-       sentiment = "neutre"
-     if twit.polarity > 0:
-       sentiment = "positif"
-     if twit.polarity < 0:
-       sentiment = "negatif"
-     q = Twit(tweet_text=tweet.text, clean_text = clean_text, user = tweet.user , nb_retweet = tweet.retweet_count , 
-     nb_like = tweet.favorite_count, Sentiment = sentiment, Polarity = twit.polarity, Date=tweet.created_at)
-     q.save()
+     neu = (neu*100)
+     neg = (neg*100)
+     pos = (pos*100)
+     neg = neg/nombre2
+     pos = pos/nombre2
+     neu = neu/nombre2
+     return render(request, "interface/resultatEN.html", {"neg": neg, "pos": pos, "neutre": neu, "nombre": nombre2, "hashtag": hashtag })
 
 
-    
-    
-    
-    return render(request, 'interface/analyse.html', locals())
 
 # Fonction de nettoyage des tweets
 
@@ -441,7 +406,10 @@ def GetSentiment(clean_text):
        analyse = - 1
      
      return analyse
+
 def recherchefr(request):
+
+
     TwitFR.objects.all().delete()
     if request.method == 'GET':
      hashtag = request.GET.get('search_box', None)
@@ -452,6 +420,7 @@ def recherchefr(request):
     # Return API with authentication:
     api = tweepy.API(auth)
     nombre = int(nombre)
+    nombre2 = nombre
 
 # On identifie le tweet qui a l'id maximum
     tweets = api.search(q = hashtag, lang = 'fr', count=1)
@@ -490,7 +459,52 @@ def recherchefr(request):
      q = TwitFR(tweet_text=tweet.text, clean_text = clean_text, user = tweet.user , nb_retweet = tweet.retweet_count , 
      nb_like = tweet.favorite_count, Date=tweet.created_at, Polarity = analyse, Sentiment = Sentiment)
      q.save()
-    return render(request, 'interface/analysefr.html', locals())
+     
+    nombre = nombre2
+    conn = sqlite3.connect("db.sqlite3")
+    cur = conn.cursor()
+    cur.execute("select Sentiment from interface_twitfr")
+    results = cur.fetchall()
+    Nb_Positif = 0.0
+    Nb_Negatif = 0.0
+    Nb_Neutre = 0.0
+    for i in range(0, nombre):
+     variable = str(results[i])
+     b = similar(variable, "Positif")
+     if b > 0.5:
+        Nb_Positif = Nb_Positif + 1
+  
+    
+    Nb_Positif = 100*Nb_Positif
+    Nb_Positif = Nb_Positif/nombre2
+
+  
+    for i in range(0, nombre):
+     variable = str(results[i])
+     a = similar(variable, "Negatif")
+    
+     if a > 0.5:
+        Nb_Negatif = Nb_Negatif + 1
+    
+   
+    Nb_Negatif = 100*Nb_Negatif
+    Nb_Negatif = Nb_Negatif/nombre2
+    
+
+    for i in range(0, nombre):
+     variable = str(results[i])
+     c = similar(variable, "Neutre")
+
+     if c > 0.5:
+       Nb_Neutre  = Nb_Neutre + 1
+
+    Nb_Neutre = 100*Nb_Neutre
+    Nb_Neutre = Nb_Neutre/nombre2
+
+
+
+
+    return render(request, "interface/resultat.html", {"neg": Nb_Negatif, "pos": Nb_Positif, "neutre": Nb_Neutre, "nombre": nombre2, "hashtag": hashtag })
 
    
 
